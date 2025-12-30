@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Any, cast
 
 import joblib
 import numpy as np
@@ -17,7 +18,13 @@ def evaluate_threshold(
     y_true: np.ndarray, p_fail: np.ndarray, threshold: float
 ) -> dict[str, float]:
     y_pred = (p_fail >= threshold).astype(int)
-    p, r, f1, _ = precision_recall_fscore_support(y_true, y_pred, average="binary", pos_label=1)
+    p, r, f1, _ = precision_recall_fscore_support(
+        y_true,
+        y_pred,
+        average="binary",
+        pos_label=1,
+        zero_division=cast(Any, 0),
+    )
     return {
         "threshold": threshold,
         "precision_fail": float(p),
@@ -57,7 +64,7 @@ def main(argv: list[str] | None = None) -> int:
         y_test,
         y_pred,
         output_dict=True,
-        zero_division="0",
+        zero_division=cast(Any, 0),
     )
 
     cm = confusion_matrix(y_test, y_pred, labels=[0, 1])

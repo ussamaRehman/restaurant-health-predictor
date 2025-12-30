@@ -22,7 +22,11 @@ make eval
 ```
 
 ## Results
-Metrics and confusion matrix are written to `reports/` (focus is precision/recall/F1 on the “fail” class = `B/C+`).
+Latest run (default split: last 20% by `inspection_date_t1`, threshold=0.5):
+- Logistic regression: precision_fail=0.248, recall_fail=0.951, f1_fail=0.394 (n_test=5672)
+- Confusion matrix in `reports/confusion_matrix.csv`
+
+Metrics are written to `reports/` (focus is precision/recall/F1 on the “fail” class = `B/C+`).
 
 ## Leakage constraints (summary)
 - Rows are inspection events `t`.
@@ -38,4 +42,3 @@ See `docs/leakage.md`.
 
 ## Ethics note
 Predictions should not be used to penalize businesses without due process; outputs are probabilistic and may encode historical biases in enforcement and reporting.
-

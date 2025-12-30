@@ -1,0 +1,48 @@
+{
+  "n_test": 5672,
+  "logreg": {
+    "threshold": 0.5,
+    "precision_fail": 0.24822021831988608,
+    "recall_fail": 0.9509090909090909,
+    "f1_fail": 0.39367707941287167
+  },
+  "always_a": {
+    "threshold": 0.5,
+    "precision_fail": 0.0,
+    "recall_fail": 0.0,
+    "f1_fail": 0.0
+  },
+  "persistence": {
+    "threshold": 0.5,
+    "precision_fail": 0.0,
+    "recall_fail": 0.0,
+    "f1_fail": 0.0
+  },
+  "logreg_report": {
+    "0": {
+      "precision": 0.9924263674614305,
+      "recall": 0.6907458024209293,
+      "f1-score": 0.8145504777253367,
+      "support": 5122.0
+    },
+    "1": {
+      "precision": 0.24822021831988608,
+      "recall": 0.9509090909090909,
+      "f1-score": 0.39367707941287167,
+      "support": 550.0
+    },
+    "accuracy": 0.7159732016925247,
+    "macro avg": {
+      "precision": 0.6203232928906584,
+      "recall": 0.8208274466650101,
+      "f1-score": 0.6041137785691042,
+      "support": 5672.0
+    },
+    "weighted avg": {
+      "precision": 0.9202625130841653,
+      "recall": 0.7159732016925247,
+      "f1-score": 0.7737394112458135,
+      "support": 5672.0
+    }
+  }
+}
