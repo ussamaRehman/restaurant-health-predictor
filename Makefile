@@ -1,4 +1,4 @@
-.PHONY: setup data preprocess train eval app lint type test
+.PHONY: setup data preprocess train eval app lint type test check ml
 
 PY := python
 TMPDIR := $(CURDIR)/.tmp
@@ -41,3 +41,7 @@ type:
 test:
 	@mkdir -p "$(TMPDIR)"
 	$(PY) -m pytest -q
+
+check: lint type test
+
+ml: setup data preprocess train eval check

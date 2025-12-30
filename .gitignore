@@ -13,5 +13,3 @@ models/*
 reports/*
 
 !.gitkeep
-!reports/metrics.json
-!reports/confusion_matrix.csv
