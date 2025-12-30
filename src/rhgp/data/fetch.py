@@ -9,6 +9,8 @@ from typing import Any
 
 import pandas as pd
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from rhgp.data.schema import desired_columns, required_columns
 
@@ -40,8 +42,22 @@ def build_params(cfg: FetchConfig, offset: int) -> dict[str, Any]:
     }
 
 
+def _build_session() -> requests.Session:
+    sess = requests.Session()
+    retry = Retry(
+        total=5,
+        backoff_factor=0.5,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET"],
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    sess.mount("https://", adapter)
+    sess.mount("http://", adapter)
+    return sess
+
+
 def fetch_available_columns(session: requests.Session | None = None) -> set[str]:
-    sess = session or requests.Session()
+    sess = session or _build_session()
     resp = sess.get(META_URL, timeout=60)
     resp.raise_for_status()
     payload = resp.json()
@@ -55,7 +71,7 @@ def fetch_available_columns(session: requests.Session | None = None) -> set[str]
 
 
 def fetch_all(cfg: FetchConfig, session: requests.Session | None = None) -> pd.DataFrame:
-    sess = session or requests.Session()
+    sess = session or _build_session()
     token = os.getenv("SOCRATA_APP_TOKEN")
     if token:
         sess.headers.update({"X-App-Token": token})

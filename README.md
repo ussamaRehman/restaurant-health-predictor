@@ -65,3 +65,5 @@ See `docs/leakage.md`.
 
 ## Ethics note
 Predictions should not be used to penalize businesses without due process; outputs are probabilistic and may encode historical biases in enforcement and reporting.
+
+License: MIT.

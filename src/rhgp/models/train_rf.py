@@ -38,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
 
     df = pd.read_parquet(args.data)
-    train_df, _ = time_split(df, test_start=args.test_start)
+    train_df, _, _, _, _ = time_split(df, test_start=args.test_start)
 
     X_train = train_df[feature_columns()]
     y_train = train_df["y_t1"].astype(int)
@@ -53,4 +53,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

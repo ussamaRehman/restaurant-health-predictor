@@ -54,14 +54,22 @@ def build_preprocessor() -> ColumnTransformer:
 
 
 def time_split(
-    df: pd.DataFrame, test_start: str | None = None
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+    df: pd.DataFrame, test_start: str | None = None, test_frac: float = 0.2
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.Timestamp, str, float | None]:
     d = df.copy()
     d["inspection_date_t1"] = pd.to_datetime(d["inspection_date_t1"], errors="coerce")
-    cutoff = pd.to_datetime(test_start) if test_start else d["inspection_date_t1"].quantile(0.8)
+    if test_start:
+        cutoff = pd.to_datetime(test_start)
+        split_method = "time-cutoff"
+        split_fraction = None
+    else:
+        cutoff = pd.to_datetime(d["inspection_date_t1"].quantile(1.0 - test_frac))
+        split_method = "time-quantile"
+        split_fraction = float(test_frac)
+    cutoff = cast(pd.Timestamp, cutoff)
     train = cast(pd.DataFrame, d.loc[d["inspection_date_t1"] < cutoff].copy())
     test = cast(pd.DataFrame, d.loc[d["inspection_date_t1"] >= cutoff].copy())
-    return (train, test)
+    return (train, test, cutoff, split_method, split_fraction)
 
 
 def build_pipeline() -> Pipeline:
@@ -78,7 +86,7 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
 
     df = pd.read_parquet(args.data)
-    train_df, _ = time_split(df, test_start=args.test_start)
+    train_df, _, _, _, _ = time_split(df, test_start=args.test_start)
 
     X_train = train_df[feature_columns()]
     y_train = train_df["y_t1"].astype(int)

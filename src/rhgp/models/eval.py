@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
 
@@ -56,6 +57,19 @@ def format_threshold_table(rows: list[dict[str, float]]) -> str:
     return "\n".join(lines)
 
 
+def dataset_fingerprint(path: Path) -> dict[str, object]:
+    try:
+        stat = path.stat()
+    except FileNotFoundError:
+        return {"path": str(path), "exists": False}
+    return {
+        "path": str(path),
+        "exists": True,
+        "size_bytes": int(stat.st_size),
+        "mtime_utc": datetime.utcfromtimestamp(stat.st_mtime).isoformat() + "Z",
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Evaluate model and baselines.")
     p.add_argument("--data", type=Path, required=True)
@@ -73,12 +87,14 @@ def main(argv: list[str] | None = None) -> int:
         "--thresholds",
         type=str,
         default=None,
-        help="Comma-separated thresholds to print a FAIL precision/recall/F1 table (logreg only).",
+        help="Comma-separated thresholds to print a FAIL precision/recall/F1 table.",
     )
     args = p.parse_args(argv)
 
     df = pd.read_parquet(args.data)
-    _, test_df = time_split(df, test_start=args.test_start)
+    _, test_df, cutoff, split_method, split_fraction = time_split(
+        df, test_start=args.test_start
+    )
     X_test = test_df[feature_columns()]
     y_test = test_df["y_t1"].astype(int).to_numpy()
 
@@ -96,6 +112,15 @@ def main(argv: list[str] | None = None) -> int:
     p_fail = model.predict_proba(X_test)[:, 1]
 
     metrics: dict[str, object] = {"n_test": int(len(test_df))}
+    metrics["run_metadata"] = {
+        "model_key": model_key,
+        "model_name": args.model.name,
+        "split_method": split_method,
+        "test_fraction": split_fraction,
+        "cutoff_date": pd.to_datetime(cutoff).date().isoformat(),
+        "dataset_fingerprint": dataset_fingerprint(args.data),
+        "feature_columns": feature_columns(),
+    }
     metrics[model_key] = evaluate_threshold(y_test, p_fail, threshold=args.threshold)
 
     p_fail_always_a = always_a_proba(test_df).to_numpy()
