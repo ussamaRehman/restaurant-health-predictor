@@ -1,5 +1,7 @@
 # Restaurant Health Grade Predictor (NYC)
 
+[![CI](https://github.com/YOUR_GITHUB_USERNAME/restaurant-health-predictor/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_GITHUB_USERNAME/restaurant-health-predictor/actions/workflows/ci.yml)
+
 Predict whether a restaurant will receive **Grade A** vs **Grade B/C (or worse)** on its **next** NYC health inspection.
 
 ## Dataset
