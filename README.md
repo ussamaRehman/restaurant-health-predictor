@@ -14,6 +14,13 @@ make setup
 ```
 
 ## Pipeline
+
+One command:
+```bash
+make ml
+```
+
+Step-by-step:
 ```bash
 make data
 make preprocess
