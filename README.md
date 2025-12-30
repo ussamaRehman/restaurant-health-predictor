@@ -27,6 +27,12 @@ Latest run (default split: last 20% by `inspection_date_t1`, threshold=0.5):
 - Persistence (last observed grade up to `t`): precision_fail=0.241, recall_fail=0.291, f1_fail=0.263
 - Run `make eval` to generate `reports/confusion_matrix.csv` locally
 
+Threshold tradeoff (logistic regression, FAIL class):
+- At `threshold=0.5`: precision_fail≈0.249, recall_fail≈0.947, f1_fail≈0.395
+- At `threshold=0.7`: precision_fail≈0.387, recall_fail≈0.520, f1_fail≈0.444
+
+Raising the threshold improves precision (fewer false alarms) but reduces recall (more missed B/C+).
+
 Run `make eval` to generate metrics under `reports/` locally (focus is precision/recall/F1 on the “fail” class = `B/C+`).
 
 ## Leakage constraints (summary)

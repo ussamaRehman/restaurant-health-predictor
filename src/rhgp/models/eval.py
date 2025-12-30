@@ -14,6 +14,19 @@ from rhgp.models.baselines import always_a_proba, persistence_proba
 from rhgp.models.train import feature_columns, time_split
 
 
+def parse_thresholds(spec: str) -> list[float]:
+    parts = [p.strip() for p in spec.split(",") if p.strip()]
+    thresholds: list[float] = []
+    for p in parts:
+        v = float(p)
+        if not (0.0 <= v <= 1.0):
+            raise ValueError(f"Threshold must be in [0, 1], got {v}")
+        thresholds.append(v)
+    if not thresholds:
+        raise ValueError("No thresholds parsed")
+    return thresholds
+
+
 def evaluate_threshold(
     y_true: np.ndarray, p_fail: np.ndarray, threshold: float
 ) -> dict[str, float]:
@@ -33,6 +46,16 @@ def evaluate_threshold(
     }
 
 
+def format_threshold_table(rows: list[dict[str, float]]) -> str:
+    header = "threshold\tprecision_fail\trecall_fail\tf1_fail"
+    lines = [header]
+    for r in rows:
+        lines.append(
+            f"{r['threshold']:.3f}\t{r['precision_fail']:.3f}\t{r['recall_fail']:.3f}\t{r['f1_fail']:.3f}"
+        )
+    return "\n".join(lines)
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Evaluate model and baselines.")
     p.add_argument("--data", type=Path, required=True)
@@ -40,6 +63,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--out-dir", type=Path, required=True)
     p.add_argument("--test-start", type=str, default=None)
     p.add_argument("--threshold", type=float, default=0.5)
+    p.add_argument(
+        "--thresholds",
+        type=str,
+        default=None,
+        help="Comma-separated thresholds to print a FAIL precision/recall/F1 table (logreg only).",
+    )
     args = p.parse_args(argv)
 
     df = pd.read_parquet(args.data)
@@ -58,6 +87,18 @@ def main(argv: list[str] | None = None) -> int:
 
     p_fail_persist = persistence_proba(test_df).to_numpy()
     metrics["persistence"] = evaluate_threshold(y_test, p_fail_persist, threshold=args.threshold)
+
+    if args.thresholds:
+        thresholds = parse_thresholds(args.thresholds)
+        rows = [evaluate_threshold(y_test, p_fail, threshold=t) for t in thresholds]
+        best = max(rows, key=lambda r: r["f1_fail"])
+        metrics["logreg_threshold_tuning"] = {
+            "thresholds": thresholds,
+            "rows": rows,
+            "best": best,
+            "chosen_threshold": float(args.threshold),
+        }
+        print(format_threshold_table(rows))
 
     y_pred = (p_fail >= args.threshold).astype(int)
     metrics["logreg_report"] = classification_report(
