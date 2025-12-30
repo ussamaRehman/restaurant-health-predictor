@@ -32,6 +32,7 @@ make eval
 Latest run (default split: last 20% by `inspection_date_t1`, threshold=0.5):
 - Logistic regression: precision_fail=0.249, recall_fail=0.951, f1_fail=0.394 (n_test=5671)
 - Persistence (last observed grade up to `t`): precision_fail=0.241, recall_fail=0.291, f1_fail=0.263
+- RandomForest: precision_fail=0.337, recall_fail=0.393, f1_fail=0.363
 - Run `make eval` to generate `reports/confusion_matrix.csv` locally
 
 Threshold tradeoff (logistic regression, FAIL class):
@@ -39,6 +40,12 @@ Threshold tradeoff (logistic regression, FAIL class):
 - At `threshold=0.7`: precision_fail≈0.387, recall_fail≈0.520, f1_fail≈0.444
 
 Raising the threshold improves precision (fewer false alarms) but reduces recall (more missed B/C+).
+
+Threshold tradeoff (RandomForest, FAIL class):
+- At `threshold=0.5`: precision_fail≈0.337, recall_fail≈0.393, f1_fail≈0.363
+- At `threshold=0.7`: precision_fail≈0.356, recall_fail≈0.113, f1_fail≈0.171
+
+For this run, RF’s best F1 among `{0.5,0.7}` is at `0.5`.
 
 Run `make eval` to generate metrics under `reports/` locally (focus is precision/recall/F1 on the “fail” class = `B/C+`).
 

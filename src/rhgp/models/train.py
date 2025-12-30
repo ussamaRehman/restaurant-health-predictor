@@ -32,18 +32,7 @@ def feature_columns() -> list[str]:
     return FEATURE_COLUMNS_NUM + FEATURE_COLUMNS_CAT
 
 
-def time_split(
-    df: pd.DataFrame, test_start: str | None = None
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    d = df.copy()
-    d["inspection_date_t1"] = pd.to_datetime(d["inspection_date_t1"], errors="coerce")
-    cutoff = pd.to_datetime(test_start) if test_start else d["inspection_date_t1"].quantile(0.8)
-    train = cast(pd.DataFrame, d.loc[d["inspection_date_t1"] < cutoff].copy())
-    test = cast(pd.DataFrame, d.loc[d["inspection_date_t1"] >= cutoff].copy())
-    return (train, test)
-
-
-def build_pipeline() -> Pipeline:
+def build_preprocessor() -> ColumnTransformer:
     numeric = Pipeline(
         [
             ("imputer", SimpleImputer(strategy="median")),
@@ -56,12 +45,27 @@ def build_pipeline() -> Pipeline:
             ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=True)),
         ]
     )
-    pre = ColumnTransformer(
+    return ColumnTransformer(
         transformers=[
             ("num", numeric, FEATURE_COLUMNS_NUM),
             ("cat", categorical, FEATURE_COLUMNS_CAT),
         ]
     )
+
+
+def time_split(
+    df: pd.DataFrame, test_start: str | None = None
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    d = df.copy()
+    d["inspection_date_t1"] = pd.to_datetime(d["inspection_date_t1"], errors="coerce")
+    cutoff = pd.to_datetime(test_start) if test_start else d["inspection_date_t1"].quantile(0.8)
+    train = cast(pd.DataFrame, d.loc[d["inspection_date_t1"] < cutoff].copy())
+    test = cast(pd.DataFrame, d.loc[d["inspection_date_t1"] >= cutoff].copy())
+    return (train, test)
+
+
+def build_pipeline() -> Pipeline:
+    pre = build_preprocessor()
     clf = LogisticRegression(max_iter=2000, class_weight="balanced")
     return Pipeline([("pre", pre), ("clf", clf)])
 

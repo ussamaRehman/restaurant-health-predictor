@@ -61,6 +61,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--data", type=Path, required=True)
     p.add_argument("--model", type=Path, required=True)
     p.add_argument("--out-dir", type=Path, required=True)
+    p.add_argument(
+        "--model-key",
+        type=str,
+        default=None,
+        help="Key name used in metrics JSON (default: inferred from model filename).",
+    )
     p.add_argument("--test-start", type=str, default=None)
     p.add_argument("--threshold", type=float, default=0.5)
     p.add_argument(
@@ -76,11 +82,21 @@ def main(argv: list[str] | None = None) -> int:
     X_test = test_df[feature_columns()]
     y_test = test_df["y_t1"].astype(int).to_numpy()
 
+    model_key = args.model_key
+    if not model_key:
+        name = args.model.stem.lower()
+        if "logreg" in name:
+            model_key = "logreg"
+        elif "rf" in name or "randomforest" in name:
+            model_key = "rf"
+        else:
+            model_key = "model"
+
     model = joblib.load(args.model)
     p_fail = model.predict_proba(X_test)[:, 1]
 
     metrics: dict[str, object] = {"n_test": int(len(test_df))}
-    metrics["logreg"] = evaluate_threshold(y_test, p_fail, threshold=args.threshold)
+    metrics[model_key] = evaluate_threshold(y_test, p_fail, threshold=args.threshold)
 
     p_fail_always_a = always_a_proba(test_df).to_numpy()
     metrics["always_a"] = evaluate_threshold(y_test, p_fail_always_a, threshold=args.threshold)
@@ -92,7 +108,7 @@ def main(argv: list[str] | None = None) -> int:
         thresholds = parse_thresholds(args.thresholds)
         rows = [evaluate_threshold(y_test, p_fail, threshold=t) for t in thresholds]
         best = max(rows, key=lambda r: r["f1_fail"])
-        metrics["logreg_threshold_tuning"] = {
+        metrics[f"{model_key}_threshold_tuning"] = {
             "thresholds": thresholds,
             "rows": rows,
             "best": best,
@@ -101,7 +117,7 @@ def main(argv: list[str] | None = None) -> int:
         print(format_threshold_table(rows))
 
     y_pred = (p_fail >= args.threshold).astype(int)
-    metrics["logreg_report"] = classification_report(
+    metrics[f"{model_key}_report"] = classification_report(
         y_test,
         y_pred,
         output_dict=True,
