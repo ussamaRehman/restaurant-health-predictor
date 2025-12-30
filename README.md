@@ -49,7 +49,7 @@ Threshold tradeoff (RandomForest, FAIL class):
 
 For this run, RF’s best F1 among `{0.5,0.7}` is at `0.5`.
 
-Run `make eval` to generate metrics under `reports/` locally (focus is precision/recall/F1 on the “fail” class = `B/C+`).
+Run `make eval` to generate metrics under `reports/` locally (focus is precision/recall/F1 on the “fail” class = `B/C+`). Reports are generated locally and not tracked in git.
 
 ## Leakage constraints (summary)
 - Rows are inspection events `t`.
