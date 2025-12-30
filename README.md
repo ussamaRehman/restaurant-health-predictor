@@ -23,7 +23,8 @@ make eval
 
 ## Results
 Latest run (default split: last 20% by `inspection_date_t1`, threshold=0.5):
-- Logistic regression: precision_fail=0.248, recall_fail=0.951, f1_fail=0.394 (n_test=5672)
+- Logistic regression: precision_fail=0.249, recall_fail=0.951, f1_fail=0.394 (n_test=5671)
+- Persistence (last observed grade up to `t`): precision_fail=0.241, recall_fail=0.291, f1_fail=0.263
 - Confusion matrix in `reports/confusion_matrix.csv`
 
 Metrics are written to `reports/` (focus is precision/recall/F1 on the “fail” class = `B/C+`).
