@@ -1,6 +1,7 @@
 import pandas as pd
 
 from rhgp.features.build_examples import build_supervised_dataset
+from rhgp.models.train import feature_columns
 
 
 def test_no_t1_columns_in_feature_block() -> None:
@@ -19,5 +20,11 @@ def test_no_t1_columns_in_feature_block() -> None:
     ds = build_supervised_dataset(raw)
     assert "grade_t1" in ds.columns
     assert "inspection_date_t1" in ds.columns
-    assert ds["y_t1"].isin([0, 1]).all()
+    assert bool(ds["y_t1"].isin([0, 1]).all())
 
+
+def test_model_features_exclude_identifiers_and_future() -> None:
+    cols = feature_columns()
+    assert "camis" not in cols
+    assert "inspection_date_t" not in cols
+    assert all(not c.endswith("_t1") for c in cols)

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import cast
+
 import pandas as pd
 
 
@@ -10,6 +12,8 @@ def always_a_proba(df: pd.DataFrame) -> pd.Series:
 
 def persistence_proba(df: pd.DataFrame) -> pd.Series:
     # Predict next inspection is fail if current grade is not A.
-    is_fail_now = df["grade_t"].isin({"B", "C"})
-    return is_fail_now.astype(float).rename("p_fail")
-
+    grade_t = cast(pd.Series, df["grade_t"])
+    is_fail_now = grade_t.isin(["B", "C"])
+    out = is_fail_now.astype(float)
+    out.name = "p_fail"
+    return out

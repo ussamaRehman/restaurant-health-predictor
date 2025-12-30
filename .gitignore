@@ -3,6 +3,8 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+.pyright/
+*.egg-info/
 .DS_Store
 
 data/raw/*

@@ -31,6 +31,19 @@ def selected_columns() -> list[str]:
     ]
 
 
+def required_columns() -> list[str]:
+    return [
+        COLS.camis,
+        COLS.inspection_date,
+    ]
+
+
+def desired_columns() -> list[str]:
+    # Requested columns; fetcher will intersect with dataset metadata.
+    # Note: we intentionally do NOT fetch `dba` to avoid accidental feature usage.
+    return selected_columns()
+
+
 def normalize_grade(value: str | None) -> str | None:
     if value is None:
         return None
@@ -38,4 +51,3 @@ def normalize_grade(value: str | None) -> str | None:
     if v in {"A", "B", "C"}:
         return v
     return None
-

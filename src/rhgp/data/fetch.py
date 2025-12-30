@@ -10,11 +10,11 @@ from typing import Any
 import pandas as pd
 import requests
 
-from rhgp.data.schema import selected_columns
-
+from rhgp.data.schema import desired_columns, required_columns
 
 DATASET_ID = "43nn-pn8j"
 BASE_URL = f"https://data.cityofnewyork.us/resource/{DATASET_ID}.json"
+META_URL = f"https://data.cityofnewyork.us/api/views/{DATASET_ID}.json"
 
 
 @dataclass(frozen=True)
@@ -29,7 +29,7 @@ def _since_years_to_date(since_years: int) -> date:
 
 
 def build_params(cfg: FetchConfig, offset: int) -> dict[str, Any]:
-    cols = selected_columns()
+    cols = desired_columns()
     # Socrata supports SoQL with $select/$where/$order, and pagination via $limit/$offset.
     return {
         "$select": ", ".join(cols),
@@ -40,16 +40,40 @@ def build_params(cfg: FetchConfig, offset: int) -> dict[str, Any]:
     }
 
 
+def fetch_available_columns(session: requests.Session | None = None) -> set[str]:
+    sess = session or requests.Session()
+    resp = sess.get(META_URL, timeout=60)
+    resp.raise_for_status()
+    payload = resp.json()
+    cols = payload.get("columns", [])
+    out: set[str] = set()
+    for c in cols:
+        field = c.get("fieldName")
+        if isinstance(field, str) and field:
+            out.add(field)
+    return out
+
+
 def fetch_all(cfg: FetchConfig, session: requests.Session | None = None) -> pd.DataFrame:
     sess = session or requests.Session()
     token = os.getenv("SOCRATA_APP_TOKEN")
     if token:
         sess.headers.update({"X-App-Token": token})
 
+    available = fetch_available_columns(sess)
+    missing_required = set(required_columns()) - available
+    if missing_required:
+        raise RuntimeError(f"Dataset missing required columns: {sorted(missing_required)}")
+
+    cols = [c for c in desired_columns() if c in available]
+    if not cols:
+        raise RuntimeError("No desired columns available to fetch")
+
     rows: list[dict[str, Any]] = []
     offset = 0
     while True:
         params = build_params(cfg, offset=offset)
+        params["$select"] = ", ".join(cols)
         resp = sess.get(BASE_URL, params=params, timeout=60)
         resp.raise_for_status()
         batch = resp.json()
@@ -94,4 +118,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

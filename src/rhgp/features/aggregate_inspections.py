@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import cast
+
 import pandas as pd
 
 from rhgp.data.schema import COLS, normalize_grade
@@ -7,7 +9,11 @@ from rhgp.data.schema import COLS, normalize_grade
 
 def aggregate_to_inspections(raw: pd.DataFrame) -> pd.DataFrame:
     df = raw.copy()
-    df[COLS.grade] = df[COLS.grade].map(normalize_grade)
+    if COLS.grade in df.columns:
+        df[COLS.grade] = df[COLS.grade].map(normalize_grade)
+    else:
+        df[COLS.grade] = None
+
     df[COLS.score] = pd.to_numeric(df.get(COLS.score), errors="coerce")
 
     # Normalize and ensure date typed.
@@ -15,8 +21,15 @@ def aggregate_to_inspections(raw: pd.DataFrame) -> pd.DataFrame:
 
     key_cols = [COLS.camis, COLS.inspection_date]
     # Violation aggregates at inspection t (allowed features).
-    df["_has_violation"] = df[COLS.violation_code].notna()
-    df["_is_critical"] = df.get(COLS.critical_flag).astype(str).str.upper().eq("CRITICAL")
+    if COLS.violation_code in df.columns:
+        df["_has_violation"] = df[COLS.violation_code].notna()
+    else:
+        df["_has_violation"] = True
+
+    if COLS.critical_flag in df.columns:
+        df["_is_critical"] = df[COLS.critical_flag].astype(str).str.upper().eq("CRITICAL")
+    else:
+        df["_is_critical"] = False
 
     agg = (
         df.groupby(key_cols, dropna=False)
@@ -31,5 +44,4 @@ def aggregate_to_inspections(raw: pd.DataFrame) -> pd.DataFrame:
         .rename(columns={COLS.camis: "camis", COLS.inspection_date: "inspection_date_t"})
     )
 
-    return agg
-
+    return cast(pd.DataFrame, agg)

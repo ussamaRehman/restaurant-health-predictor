@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from typing import cast
 
 import joblib
 import pandas as pd
@@ -10,7 +11,6 @@ from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
-
 
 FEATURE_COLUMNS_NUM = [
     "score_t",
@@ -26,13 +26,21 @@ FEATURE_COLUMNS_NUM = [
 FEATURE_COLUMNS_CAT = ["inspection_type", "grade_t", "prev_grade"]
 
 
-def time_split(df: pd.DataFrame, test_start: str | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
+def feature_columns() -> list[str]:
+    # Explicit allowlist to avoid accidental inclusion of identifiers (e.g., CAMIS)
+    # or any t+1 fields.
+    return FEATURE_COLUMNS_NUM + FEATURE_COLUMNS_CAT
+
+
+def time_split(
+    df: pd.DataFrame, test_start: str | None = None
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     d = df.copy()
     d["inspection_date_t1"] = pd.to_datetime(d["inspection_date_t1"], errors="coerce")
     cutoff = pd.to_datetime(test_start) if test_start else d["inspection_date_t1"].quantile(0.8)
-    train = d[d["inspection_date_t1"] < cutoff].copy()
-    test = d[d["inspection_date_t1"] >= cutoff].copy()
-    return train, test
+    train = cast(pd.DataFrame, d.loc[d["inspection_date_t1"] < cutoff].copy())
+    test = cast(pd.DataFrame, d.loc[d["inspection_date_t1"] >= cutoff].copy())
+    return (train, test)
 
 
 def build_pipeline() -> Pipeline:
@@ -63,7 +71,7 @@ def main(argv: list[str] | None = None) -> int:
     df = pd.read_parquet(args.data)
     train_df, _ = time_split(df, test_start=args.test_start)
 
-    X_train = train_df[FEATURE_COLUMNS_NUM + FEATURE_COLUMNS_CAT]
+    X_train = train_df[feature_columns()]
     y_train = train_df["y_t1"].astype(int)
 
     pipe = build_pipeline()
@@ -76,4 +84,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
